@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: developer-crud-app-config
+data:
+  QUARKUS_DATASOURCE_URL: jdbc:postgresql://developer-database:5432/developer
+  QUARKUS_DATASOURCE_USERNAME: test
+  QUARKUS_DATASOURCE_PASSWORD: test
+  DEPLOYMENT_ENVIRONMENT: kubernetes
+  SERVICE_NAME: developer-crud-app-kubernetes

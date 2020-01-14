@@ -1,0 +1,88 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  data:
+    DEPLOYMENT_ENVIRONMENT: kubernetes
+    QUARKUS_DATASOURCE_URL: jdbc:postgresql://developer-database:5432/developer
+    SERVICE_NAME: developer-crud-app-kubernetes
+  kind: ConfigMap
+  metadata:
+    labels:
+      template: developer-crud-app-template
+    name: developer-crud-app-config
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    annotations:
+      template.openshift.io/base64-expose-password: '{.data[''database-password'']}'
+      template.openshift.io/expose-username: '{.data[''database-user'']}'
+    labels:
+      template: developer-crud-app-template
+    name: developer-crud-app-secret
+  stringData:
+    QUARKUS_DATASOURCE_PASSWORD: test
+    QUARKUS_DATASOURCE_USERNAME: test
+  type: Opaque
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      app: developer-crud-app
+      template: developer-crud-app-template
+    name: developer-crud-app
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: developer-crud-app
+    template:
+      metadata:
+        labels:
+          app: developer-crud-app
+      spec:
+        containers:
+        - envFrom:
+          - configMapRef:
+              name: developer-crud-app-config
+          - secretRef:
+              name: developer-crud-app-secret
+          image: 172.30.1.1:5000/quarkus-msvcs/developer-crud-app:latest
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9999
+            initialDelaySeconds: 1
+            periodSeconds: 5
+          name: developer-crud-app
+          terminationGracePeriodSeconds: 30
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: developer-crud-app
+      template: developer-crud-app-template
+    name: developer-crud-app
+  spec:
+    ports:
+    - name: http
+      port: 9999
+      protocol: TCP
+      targetPort: 9999
+    selector:
+      app: developer-crud-app
+    type: ClusterIP
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    labels:
+      app: developer-crud-app
+      template: developer-crud-app-template
+    name: developer-crud-app
+  spec:
+    to:
+      kind: Service
+      name: developer-crud-app
+      weight: 100
+kind: List
+metadata: {}

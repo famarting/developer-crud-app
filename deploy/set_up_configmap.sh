@@ -1,0 +1,1 @@
+oc create configmap developer-crud-app-config --from-env-file=app-config.properties
